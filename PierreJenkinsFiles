@@ -1,0 +1,51 @@
+pipeline {
+    agent { label 'maven'}
+
+    stages {
+        stage('Clone Codebase') {
+            steps {
+                echo 'Clone'
+                git 'https://github.com/PierreC-Kyn/maven-project.git'
+            }
+        }
+    stage('Compile') {
+            steps {
+                echo 'Compiling'
+                withMaven(maven:'local.mvn')
+                { 
+                    sh "mvn compile" }
+            }
+        }
+    stage('UnitTests') {
+            steps {
+                echo 'Testing'
+                withMaven(maven:'local.mvn')
+                { 
+                    sh "mvn test"
+            }
+            }
+        }
+    stage('Build') {
+            steps {
+                echo 'Build' 
+                withMaven(maven:'local.mvn')
+                {  sh "mvn -B -DskipTests clean package" }
+            }
+        }
+    stage('Analysis With SonarQube') {
+            steps {
+                echo 'Quali'
+                withSonarQubeEnv(installationName:'local.sonarQ',credentialsId:'cred4sonar')
+                {  
+                    sh "mvn -B -DskipTests clean package sonar:sonar" 
+                    
+                }
+            }
+        } 
+    stage('Deploy') {
+            steps {
+                echo 'Deploy'
+            }
+        }        
+    }
+}
